@@ -149,6 +149,13 @@ function drawContainedImage(ctx, image, x, y, width, height) {
   ctx.drawImage(image, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
 }
 
+function fitText(ctx, text, maxSize, minSize, weight, maxWidth) {
+  for (let size = maxSize; size >= minSize; size -= 2) {
+    ctx.font = `${weight} ${size}px -apple-system, BlinkMacSystemFont, PingFang SC, sans-serif`;
+    if (ctx.measureText(text).width <= maxWidth) return;
+  }
+}
+
 function drawQr(ctx, modules, x, y, sizePx) {
   const count = modules.length;
   const quiet = 4;
@@ -198,51 +205,43 @@ async function createSharePoster(finalResult) {
   ctx.lineTo(1080, 1350);
   ctx.fill();
 
-  ctx.fillStyle = "#9e1b32";
-  ctx.font = "900 42px -apple-system, BlinkMacSystemFont, PingFang SC, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("RUCTI 毕业人格测试", 540, 112);
   ctx.fillStyle = "#767676";
   ctx.font = "700 30px -apple-system, BlinkMacSystemFont, PingFang SC, sans-serif";
-  ctx.fillText("我的 RUC 毕业人格是", 540, 174);
+  ctx.fillText("我的 RUC 毕业人格是", 540, 112);
 
   ctx.fillStyle = "#7a1426";
-  ctx.font = "900 118px -apple-system, BlinkMacSystemFont, PingFang SC, sans-serif";
-  ctx.fillText(result.name, 540, 305);
+  fitText(ctx, result.name, 104, 76, 900, 780);
+  ctx.fillText(result.name, 540, 226);
   ctx.fillStyle = "#9e1b32";
-  ctx.font = "900 72px -apple-system, BlinkMacSystemFont, PingFang SC, sans-serif";
-  ctx.fillText(result.english, 540, 370);
+  fitText(ctx, result.english, 102, 72, 900, 850);
+  ctx.fillText(result.english, 540, 328);
 
   ctx.fillStyle = "#fffaf2";
-  roundRect(ctx, 170, 430, 740, 740, 28);
+  roundRect(ctx, 98, 392, 884, 884, 30);
   ctx.fill();
   ctx.strokeStyle = "#e8dccb";
   ctx.lineWidth = 4;
   ctx.stroke();
-  drawContainedImage(ctx, image, 215, 475, 650, 650);
+  drawContainedImage(ctx, image, 140, 434, 800, 800);
 
   ctx.textAlign = "left";
   ctx.fillStyle = "#fffdf8";
-  roundRect(ctx, 108, 1248, 864, 292, 24);
+  roundRect(ctx, 108, 1326, 864, 220, 24);
   ctx.fill();
   ctx.strokeStyle = "#e8dccb";
   ctx.stroke();
   ctx.fillStyle = "#7a1426";
   ctx.font = "900 34px -apple-system, BlinkMacSystemFont, PingFang SC, sans-serif";
-  ctx.fillText("人格报告", 156, 1314);
+  ctx.fillText("人格报告", 156, 1390);
   ctx.fillStyle = "#514840";
   ctx.font = "500 30px -apple-system, BlinkMacSystemFont, PingFang SC, sans-serif";
-  wrapText(ctx, result.description, 156, 1370, 768, 44, 2);
-  wrapText(ctx, result.blessing, 156, 1462, 768, 44, 2);
+  wrapText(ctx, result.description, 156, 1448, 768, 44, 2);
 
-  drawQr(ctx, qrModules, 702, 1604, 220);
-  ctx.fillStyle = "#7a1426";
-  ctx.font = "900 34px -apple-system, BlinkMacSystemFont, PingFang SC, sans-serif";
-  ctx.fillText("扫码测测你的 RUC 人格", 108, 1676);
+  drawQr(ctx, qrModules, 738, 1610, 212);
   ctx.fillStyle = "#767676";
-  ctx.font = "500 26px -apple-system, BlinkMacSystemFont, PingFang SC, sans-serif";
-  ctx.fillText(getShareUrl(), 108, 1724);
-  ctx.fillText("纯属娱乐，无意冒犯。作者77", 108, 1770);
+  ctx.font = "700 28px -apple-system, BlinkMacSystemFont, PingFang SC, sans-serif";
+  ctx.fillText(getShareUrl(), 108, 1732);
 
   return canvas.toDataURL("image/png");
 }
