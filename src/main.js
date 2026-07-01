@@ -394,7 +394,17 @@ app.addEventListener("click", (event) => {
   if (action === "answer") updateAnswer(questions[state.currentIndex].id, target.dataset.option);
   if (action === "restart") restart();
   if (action === "share") openSharePoster();
-  if (action === "close-share") target.closest(".share-modal")?.remove();
+});
+
+document.addEventListener("click", (event) => {
+  const target = event.target.closest("[data-action='close-share']");
+  if (!target) return;
+  target.closest(".share-modal")?.remove();
+  const toast = app.querySelector(".toast");
+  if (toast) {
+    toast.textContent = "";
+    toast.setAttribute("aria-hidden", "true");
+  }
 });
 
 render();
