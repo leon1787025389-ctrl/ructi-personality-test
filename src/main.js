@@ -20,6 +20,45 @@ const dimensionLabels = {
   study: "爱学"
 };
 
+const tagResultMap = {
+  leader: "LEADER",
+  eater: "EATER",
+  hedgehog: "HEDGEHOG",
+  rucat: "RUCAT",
+  model: "MODEL",
+  mom: "MOM",
+  defender: "DEFENDER",
+  dove: "DOVE",
+  just_rucer: "JUST_RUCER_1",
+  speaker: "SPEAKER",
+  kfcer: "KFCER",
+  fduer: "FDUER",
+  rednoter: "REDNOTER",
+  god: "GOD",
+  mouse: "MOUSE",
+  tongxian: "TONGXIAN"
+};
+
+const resultTagAliases = {
+  LEADER: ["leader"],
+  EATER: ["eater"],
+  HEDGEHOG: ["hedgehog"],
+  RUCAT: ["rucat"],
+  MODEL: ["model"],
+  MOM: ["mom"],
+  DEFENDER: ["defender"],
+  DOVE: ["dove"],
+  JUST_RUCER_1: ["just_rucer"],
+  SPEAKER: ["speaker"],
+  KFCER: ["kfcer"],
+  JUST_RUCER_2: ["just_rucer"],
+  FDUER: ["fduer"],
+  REDNOTER: ["rednoter"],
+  GOD: ["god"],
+  MOUSE: ["mouse"],
+  TONGXIAN: ["tongxian"]
+};
+
 function setPage(page) {
   state.page = page;
   render();
@@ -126,6 +165,15 @@ function drawQr(ctx, modules, x, y, sizePx) {
   }
 }
 
+function getSecondaryResult(finalResult) {
+  const blockedTags = new Set(resultTagAliases[finalResult.result.id] || []);
+  const candidates = Object.entries(finalResult.tags || {})
+    .filter(([tag, score]) => score > 0 && !blockedTags.has(tag) && tagResultMap[tag])
+    .sort((a, b) => b[1] - a[1]);
+  const resultId = tagResultMap[candidates[0]?.[0]];
+  return resultId ? results[resultId] : null;
+}
+
 async function createSharePoster(finalResult) {
   const result = finalResult.result;
   const canvas = document.createElement("canvas");
@@ -162,7 +210,7 @@ async function createSharePoster(finalResult) {
   ctx.font = "900 118px -apple-system, BlinkMacSystemFont, PingFang SC, sans-serif";
   ctx.fillText(result.name, 540, 305);
   ctx.fillStyle = "#9e1b32";
-  ctx.font = "900 42px -apple-system, BlinkMacSystemFont, PingFang SC, sans-serif";
+  ctx.font = "900 72px -apple-system, BlinkMacSystemFont, PingFang SC, sans-serif";
   ctx.fillText(result.english, 540, 370);
 
   ctx.fillStyle = "#fffaf2";
@@ -173,32 +221,19 @@ async function createSharePoster(finalResult) {
   ctx.stroke();
   drawContainedImage(ctx, image, 215, 475, 650, 650);
 
-  const tags = finalResult.isEasterEgg
-    ? ["隐藏人格", "通州校区直达"]
-    : Object.entries(finalResult.levels).map(([key, level]) => `${dimensionLabels[key]}${level === "high" ? "高" : "低"}`);
-  ctx.font = "800 30px -apple-system, BlinkMacSystemFont, PingFang SC, sans-serif";
-  let tagX = 540 - tags.length * 88;
-  for (const tag of tags) {
-    ctx.fillStyle = "#efe2d0";
-    roundRect(ctx, tagX, 1228, 152, 56, 28);
-    ctx.fill();
-    ctx.fillStyle = "#5a4a3f";
-    ctx.fillText(tag, tagX + 76, 1266);
-    tagX += 176;
-  }
-
   ctx.textAlign = "left";
   ctx.fillStyle = "#fffdf8";
-  roundRect(ctx, 108, 1340, 864, 210, 24);
+  roundRect(ctx, 108, 1248, 864, 292, 24);
   ctx.fill();
   ctx.strokeStyle = "#e8dccb";
   ctx.stroke();
   ctx.fillStyle = "#7a1426";
   ctx.font = "900 34px -apple-system, BlinkMacSystemFont, PingFang SC, sans-serif";
-  ctx.fillText("毕业祝福", 156, 1405);
+  ctx.fillText("人格报告", 156, 1314);
   ctx.fillStyle = "#514840";
-  ctx.font = "500 32px -apple-system, BlinkMacSystemFont, PingFang SC, sans-serif";
-  wrapText(ctx, result.blessing, 156, 1462, 768, 48, 3);
+  ctx.font = "500 30px -apple-system, BlinkMacSystemFont, PingFang SC, sans-serif";
+  wrapText(ctx, result.description, 156, 1370, 768, 44, 2);
+  wrapText(ctx, result.blessing, 156, 1462, 768, 44, 2);
 
   drawQr(ctx, qrModules, 702, 1604, 220);
   ctx.fillStyle = "#7a1426";
@@ -207,7 +242,7 @@ async function createSharePoster(finalResult) {
   ctx.fillStyle = "#767676";
   ctx.font = "500 26px -apple-system, BlinkMacSystemFont, PingFang SC, sans-serif";
   ctx.fillText(getShareUrl(), 108, 1724);
-  ctx.fillText("纯属娱乐，切莫当真", 108, 1770);
+  ctx.fillText("纯属娱乐，无意冒犯。作者77", 108, 1770);
 
   return canvas.toDataURL("image/png");
 }
@@ -271,7 +306,6 @@ function renderQuiz() {
         <div class="progress-fill" style="width: ${progress}%"></div>
       </div>
       <article class="question-card">
-        <p class="question-dim">${question.dimension ? dimensionLabels[question.dimension] : "隐藏彩蛋"}</p>
         <h2>${question.title}</h2>
         ${question.scene ? `<p class="scene">${question.scene}</p>` : ""}
       </article>
@@ -287,15 +321,21 @@ function renderQuiz() {
   `;
 }
 
-function renderScoreTags(finalResult) {
+function renderDimensionBars(finalResult) {
   if (finalResult.isEasterEgg) {
     return `<div class="tag-row"><span class="tag-chip">隐藏人格</span><span class="tag-chip">通州校区直达</span></div>`;
   }
 
   return `
-    <div class="tag-row">
-      ${Object.entries(finalResult.levels).map(([key, level]) => `
-        <span class="tag-chip">${dimensionLabels[key]} ${level === "high" ? "高" : "低"}</span>
+    <div class="dimension-bars" aria-label="四维结果">
+      ${Object.entries(dimensionLabels).map(([key, label]) => `
+        <div class="dimension-row">
+          <span>${label}</span>
+          <div class="dimension-track">
+            <div class="dimension-fill" style="width: ${Math.max(8, (finalResult.scores[key] / 3) * 100)}%"></div>
+          </div>
+          <strong>${finalResult.scores[key]} / 3</strong>
+        </div>
       `).join("")}
     </div>
   `;
@@ -304,6 +344,7 @@ function renderScoreTags(finalResult) {
 function renderResult() {
   const finalResult = state.finalResult || getFinalResult(state.answers, questions, resultMap, results);
   const result = finalResult.result;
+  const secondaryResult = getSecondaryResult(finalResult);
   return `
     <section class="screen result-screen">
       <p class="result-kicker">你的 RUC 毕业人格是</p>
@@ -312,19 +353,24 @@ function renderResult() {
       <div class="result-image-box">
         <img src="${result.imagePlaceholder}" alt="RUCTI 人格 ${result.name} ${result.english} 的 low-poly 插画" loading="lazy" />
       </div>
-      ${renderScoreTags(finalResult)}
+      ${secondaryResult ? `
+        <div class="secondary-result">
+          <span>你还沾点</span>
+          <strong>${secondaryResult.name}</strong>
+          <em>${secondaryResult.english}</em>
+        </div>
+      ` : ""}
       <article class="report-card">
         <h2>人格报告</h2>
         <p>${result.description}</p>
-      </article>
-      <article class="blessing-card">
-        <h2>毕业祝福</h2>
         <p>${result.blessing}</p>
       </article>
+      ${renderDimensionBars(finalResult)}
       <div class="result-actions">
         <button class="primary-button" data-action="share">生成分享图</button>
         <button class="secondary-button" data-action="restart">再测一次</button>
       </div>
+      <p class="readme-note">README：本测试纯属娱乐，无意冒犯。作者77。</p>
       <p class="toast" role="status" aria-hidden="true"></p>
     </section>
   `;
